@@ -382,7 +382,7 @@ impl PlaybookContext {
         let mut my_env = self.env_storage.write().unwrap();
         // some common environment variables that may occur are not useful for playbooks
         // or they have no need to share that with other hosts
-        let do_not_load = vec![
+        let do_not_load = [
             "OLDPWD",
             "PWD",
             "SHLVL",

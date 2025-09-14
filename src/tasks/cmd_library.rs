@@ -46,7 +46,7 @@ pub fn screen_path(path: &String) -> Result<String,String> {
 
 pub fn screen_general_input_strict(input: &String) -> Result<String,String> {
     let input2 = input.trim();
-    let bad = vec![ ";", "{", "}", "(", ")", "<", ">", "&", "*", "|", "=", "?", "[", "]", "$", "%", "`"];
+    let bad = [";", "{", "}", "(", ")", "<", ">", "&", "*", "|", "=", "?", "[", "]", "$", "%", "`"];
 
     for invalid in bad.iter() {
         if input2.find(invalid).is_some() {
@@ -64,7 +64,7 @@ pub fn screen_general_input_strict(input: &String) -> Result<String,String> {
 
 pub fn screen_general_input_loose(input: &String) -> Result<String,String> {
     let input2 = input.trim();
-    let bad = vec![ ";", "<", ">", "&", "*", "?", "{", "}", "[", "]", "$", "`"];
+    let bad = [";", "<", ">", "&", "*", "?", "{", "}", "[", "]", "$", "`"];
     for invalid in bad.iter() {
         if input2.find(invalid).is_some() {
             return Err(format!("illegal characters detected: {} ('{}')", input2, invalid.to_string()));

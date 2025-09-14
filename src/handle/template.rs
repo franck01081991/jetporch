@@ -151,9 +151,9 @@ impl Template {
         // same as self.string above, this version also does not allow spaces in the resulting string
         let value = self.string(request, tm, field, template)?;
         if self.has_spaces(&value) {
-            return Err(self.response.is_failed(request, &format!("field ({}): spaces are not allowed", field)))
+            return Err(self.response.is_failed(request, &format!("field ({}): spaces are not allowed", field)));
         }
-        return Ok(value.clone());
+        Ok(value.clone())
     }
 
     pub fn string_option_no_spaces(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, template: &Option<String>) -> Result<Option<String>,Arc<TaskResponse>> {
@@ -161,11 +161,11 @@ impl Template {
         let prelim = self.string_option(request, tm, field, template)?;
         if prelim.is_some() {
             let value = prelim.as_ref().unwrap();
-            if self.has_spaces(&value) {
-                return Err(self.response.is_failed(request, &format!("field ({}): spaces are not allowed", field)))
+            if self.has_spaces(value) {
+                return Err(self.response.is_failed(request, &format!("field ({}): spaces are not allowed", field)));
             }
         }
-        return Ok(prelim.clone());
+        Ok(prelim.clone())
     }
 
     pub fn string_option_default(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, template: &Option<String>, default: &String) -> Result<String,Arc<TaskResponse>> {
@@ -245,7 +245,7 @@ impl Template {
         if template.is_none() {
             return Ok(default);
         }
-        let st = self.string(request, tm, field, &template.as_ref().unwrap())?;
+        let st = self.string(request, tm, field, template.as_ref().unwrap())?;
         let num = st.parse::<u64>();
         // FIXME: these can use map_err
         return match num {
@@ -262,7 +262,7 @@ impl Template {
         if template.is_none() {
             return Ok(default); 
         }
-        let st = self.string(request, tm, field, &template.as_ref().unwrap())?;
+        let st = self.string(request, tm, field, template.as_ref().unwrap())?;
         let num = st.parse::<u64>();
         // FIXME: these can use map_err
         return match num {
@@ -289,12 +289,12 @@ impl Template {
     #[allow(dead_code)]
     pub fn boolean_option_default_true(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, template: &Option<String>)-> Result<bool,Arc<TaskResponse>>{
         // templates an optional value that resolves to a boolean, if omitted, assume the answer is true
-        return self.internal_boolean_option(request, tm, field, template, true);
+          self.internal_boolean_option(request, tm, field, template, true)
     }
 
     pub fn boolean_option_default_false(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, template: &Option<String>)-> Result<bool,Arc<TaskResponse>>{
         // templates an optional value that resolves to a boolean, if omitted, assume the answer is false
-        return self.internal_boolean_option(request, tm, field, template, false);
+          self.internal_boolean_option(request, tm, field, template, false)
     }
   
     fn internal_boolean_option(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, template: &Option<String>, default: bool)-> Result<bool,Arc<TaskResponse>>{
@@ -305,7 +305,7 @@ impl Template {
         if template.is_none() {
             return Ok(default);
         }
-        let st = self.string(request, tm, field, &template.as_ref().unwrap())?;
+        let st = self.string(request, tm, field, template.as_ref().unwrap())?;
         let x = st.parse::<bool>();
         return match x {
             Ok(x) => Ok(x),
@@ -321,7 +321,7 @@ impl Template {
         if template.is_none() {
             return Ok(None);
         }
-        let st = self.string(request, tm, field, &template.as_ref().unwrap())?;
+        let st = self.string(request, tm, field, template.as_ref().unwrap())?;
         let x = st.parse::<bool>();
         return match x {
             Ok(x) => Ok(Some(x)), 
@@ -354,29 +354,29 @@ impl Template {
     pub fn find_template_path(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, str_path: &String) -> Result<PathBuf, Arc<TaskResponse>> {
         // templates a string and then looks for the resulting file in the logical templates/ locations (if not an absolute path)
         // raises errors if the source files are not found
-        return self.find_sub_path(&String::from("templates"), request, tm, field, str_path);
+          self.find_sub_path(&String::from("templates"), request, tm, field, str_path)
     }
 
-    pub fn find_module_path(&self, request: &Arc<TaskRequest>, _tm: TemplateMode, _field: &String, str_path: &String) -> Result<PathBuf, Arc<TaskResponse>> {
+    pub fn find_module_path(&self, request: &Arc<TaskRequest>, _tm: TemplateMode, _field: &str, str_path: &str) -> Result<PathBuf, Arc<TaskResponse>> {
 
         // when we need to find a module we look for it in the configured module paths
         for path_buf in self.run_state.module_paths.read().unwrap().iter() {
         
-            let mut pb = path_buf.clone();
-            pb.push(str_path.clone());
+              let mut pb = path_buf.clone();
+              pb.push(str_path);
          
              if pb.exists() {
                 return Ok(pb);
             }
         }
 
-        return Err(self.response.is_failed(request, &format!("module not found: {}", str_path)));
+          Err(self.response.is_failed(request, &format!("module not found: {}", str_path)))
        
     }
 
     pub fn find_file_path(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, str_path: &String) -> Result<PathBuf, Arc<TaskResponse>> {
         // simialr to find_template_path, this one assumes a 'files/' directory for relative paths.
-        return self.find_sub_path(&String::from("files"), request, tm, field, str_path);
+          self.find_sub_path(&String::from("files"), request, tm, field, str_path)
     }
 
     fn find_sub_path(&self, prefix: &String, request: &Arc<TaskRequest>, tm: TemplateMode, field: &String, str_path: &String) -> Result<PathBuf, Arc<TaskResponse>> {
@@ -392,26 +392,26 @@ impl Template {
         path.push(prelim);
         if path.is_absolute() {
             if path.is_file() {
-                return Ok(path);
+                  Ok(path)
             } else {
-                return Err(self.response.is_failed(request, &format!("field ({}): no such file: {}", field, str_path)));
+                  Err(self.response.is_failed(request, &format!("field ({}): no such file: {}", field, str_path)))
             }
         } else {
             let mut path2 = PathBuf::new();
             path2.push(prefix);
             path2.push(str_path);
-            if path2.is_file() {
-                return Ok(path2);
-            } else {
-                return Err(self.response.is_failed(request, &format!("field ({}): no such file: {}", field, str_path)));
-            }
+              if path2.is_file() {
+                  Ok(path2)
+              } else {
+                  Err(self.response.is_failed(request, &format!("field ({}): no such file: {}", field, str_path)))
+              }
         }
     }
 
-    fn has_spaces(&self, input: &String) -> bool {
-        let found = input.find(' ');
-        return found.is_some();
-    }
+      fn has_spaces(&self, input: &str) -> bool {
+          let found = input.find(' ');
+          found.is_some()
+      }
 
     pub fn add_sudo_details(&self, request: &TaskRequest, cmd: &str) -> Result<String, String> {
         // this is used by remote.rs to modify any command, inserting the results of evaluating the configured sudo_template
@@ -427,7 +427,7 @@ impl Template {
         data.insert(serde_yaml::Value::String(String::from("jet_sudo_user")), serde_yaml::Value::String(user.clone()));
         data.insert(serde_yaml::Value::String(String::from("jet_command")), serde_yaml::Value::String(cmd.to_string()));
         let result = self.detached_templar.render(&sudo_template, data, TemplateMode::Strict)?;
-        return Ok(result)
+        Ok(result)
     }
 
 

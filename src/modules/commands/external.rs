@@ -56,7 +56,7 @@ impl IsTask for ExternalTask {
         return Ok(
             EvaluatedTask {
                 action: Arc::new(ExternalAction {
-                    use_module: handle.template.find_module_path(request, tm, &String::from("use"), &self.use_module)?,
+                    use_module: handle.template.find_module_path(request, tm, "use", &self.use_module)?,
                     // FIXME: template the parameters
                     params: {
                         let params_data = match serde_json::to_string(&self.params) {

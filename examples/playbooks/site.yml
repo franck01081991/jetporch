@@ -1,0 +1,7 @@
+- name: example playbook
+  groups:
+    - all
+  tasks:
+    - !shell
+      cmd: "echo hello from Jet"
+

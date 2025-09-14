@@ -73,7 +73,7 @@ fn liftoff() -> Result<(),String> {
         cli::parser::CLI_MODE_SHOW => {},
         _ => {
             if ! cli_parser.playbook_set {
-                return Err(String::from("--playbook is required"));
+                return Err(String::from("playbook path is required"));
             }
         }
     };

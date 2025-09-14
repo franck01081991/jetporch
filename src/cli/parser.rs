@@ -218,7 +218,7 @@ fn show_version() {
                                 | build | {}@{}\n\
                                 | | {}\n\
                                 | --- | ---\n\
-                                | | usage: jetp <MODE> [flags]\n\
+                                | | usage: jetp <MODE> <playbook> [flags]\n\
                                 |-|-", GIT_VERSION, GIT_BRANCH, BUILD_TIME);
     println!("");
     crate::util::terminal::markdown_print(&String::from(header_table));
@@ -417,6 +417,12 @@ impl CliParser  {
                 _ => {
 
                     if next_is_value == false {
+
+                        // allow a positional playbook file similar to ansible-playbook
+                        if !argument_str.starts_with('-') && !self.playbook_set {
+                            self.append_playbook(argument)?;
+                            continue 'each_argument;
+                        }
 
                         // if we expect a flag...
                         // the --help argument requires special handling as it has no

@@ -16,7 +16,7 @@
 
 use crate::inventory::hosts::HostOSType;
 use crate::tasks::*;
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use crate::tasks::fields::Field;
 use serde::{Deserialize};
 use std::collections::{HashSet};

@@ -15,7 +15,7 @@
 // long with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::tasks::*;
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -60,23 +60,23 @@ impl IsTask for AssertTask {
                     name: self.name.clone().unwrap_or(String::from(MODULE)),
                     msg: handle.template.string_option_unsafe_for_shell(request, tm, &String::from("msg"), &self.msg)?,
                     r#true: match self.r#true.is_some() {
-                            true => handle.template.test_condition(request, tm, &self.r#true.as_ref().unwrap())?,
+                            true => handle.template.test_condition(request, tm, self.r#true.as_ref().unwrap())?,
                             false => true
                     },
                     r#false: match self.r#false.is_some() {
-                            true => handle.template.test_condition(request, tm, &self.r#false.as_ref().unwrap())?,
+                            true => handle.template.test_condition(request, tm, self.r#false.as_ref().unwrap())?,
                             false => false
                     },
                     all_true: match self.all_true.is_some() {
-                        true => eval_list(handle, request, tm, self.all_true.as_ref().unwrap())?,
+                        true => eval_list(handle, request, tm, self.all_true.as_ref().unwrap().as_slice())?,
                         false => vec![true]
                     },
                     all_false: match self.all_false.is_some() {
-                        true => eval_list(handle, request, tm, self.all_false.as_ref().unwrap())?,
+                        true => eval_list(handle, request, tm, self.all_false.as_ref().unwrap().as_slice())?,
                         false => vec![false]
                     },
                     some_true: match self.some_true.is_some() {
-                        true => eval_list(handle, request, tm, self.some_true.as_ref().unwrap())?,
+                        true => eval_list(handle, request, tm, self.some_true.as_ref().unwrap().as_slice())?,
                         false => vec![true]
                     }
                 }),
@@ -87,12 +87,12 @@ impl IsTask for AssertTask {
     }
 }
 
-fn eval_list(handle: &Arc<TaskHandle>, request: &Arc<TaskRequest>, tm: TemplateMode, list: &Vec<String>) -> Result<Vec<bool>,Arc<TaskResponse>> {
+fn eval_list(handle: &Arc<TaskHandle>, request: &Arc<TaskRequest>, tm: TemplateMode, list: &[String]) -> Result<Vec<bool>,Arc<TaskResponse>> {
     let mut results : Vec<bool> = Vec::new();
     for item in list.iter() {
         results.push(handle.template.test_condition(request, tm, item)?);
     }
-    return Ok(results);
+    Ok(results)
 }
 
 impl IsAction for AssertAction {

@@ -16,7 +16,7 @@
 
 use crate::registry::list::Task;
 use crate::connection::connection::Connection;
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use crate::playbooks::traversal::RunState;
 use crate::inventory::hosts::Host;
 use crate::playbooks::traversal::HandlerMode;
@@ -189,7 +189,7 @@ fn run_task_on_host(
     if evaluated.with.is_some() {
         let condition = &evaluated.with.as_ref().as_ref().unwrap().condition; // lol rust
         if condition.is_some() {
-            let cond = handle.template.test_condition(&validate, TemplateMode::Strict, &condition.as_ref().unwrap())?;
+            let cond = handle.template.test_condition(&validate, TemplateMode::Strict, condition.as_ref().unwrap())?;
             if ! cond {
                 return Ok(handle.response.is_skipped(&Arc::clone(&validate)));
             }

@@ -273,21 +273,21 @@ impl PlaybookContext {
     // only the context knows all the variables from the playbook traversal to fill in and how to blend
     // variables in the correct order.
 
-    pub fn render_template(&self, template: &String, host: &Arc<RwLock<Host>>, blend_target: BlendTarget, template_mode: TemplateMode) -> Result<String,String> {
+    pub fn render_template(&self, template: &str, host: &Arc<RwLock<Host>>, blend_target: BlendTarget, template_mode: TemplateMode) -> Result<String,String> {
         let vars = self.get_complete_blended_variables(host, blend_target);
         return self.templar.read().unwrap().render(template, vars, template_mode);
     }
 
     // testing conditions for truthiness works much like templating strings
 
-    pub fn test_condition(&self, expr: &String, host: &Arc<RwLock<Host>>, tm: TemplateMode) -> Result<bool,String> {
+    pub fn test_condition(&self, expr: &str, host: &Arc<RwLock<Host>>, tm: TemplateMode) -> Result<bool,String> {
         let vars = self.get_complete_blended_variables(host, BlendTarget::NotTemplateModule);
         return self.templar.read().unwrap().test_condition(expr, vars, tm);
     }
 
     // a version of template evaluation that allows some additional variables, for example from a module
 
-    pub fn test_condition_with_extra_data(&self, expr: &String, host: &Arc<RwLock<Host>>, vars_input: serde_yaml::Mapping, tm: TemplateMode) -> Result<bool,String> {
+    pub fn test_condition_with_extra_data(&self, expr: &str, host: &Arc<RwLock<Host>>, vars_input: serde_yaml::Mapping, tm: TemplateMode) -> Result<bool,String> {
         let mut vars = self.get_complete_blended_variables_as_value(host, BlendTarget::NotTemplateModule);
         blend_variables(&mut vars, serde_yaml::Value::Mapping(vars_input));
         return match vars {
@@ -382,7 +382,7 @@ impl PlaybookContext {
         let mut my_env = self.env_storage.write().unwrap();
         // some common environment variables that may occur are not useful for playbooks
         // or they have no need to share that with other hosts
-        let do_not_load = vec![
+        let do_not_load = [
             "OLDPWD",
             "PWD",
             "SHLVL",

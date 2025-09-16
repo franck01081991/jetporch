@@ -15,7 +15,7 @@
 // long with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::tasks::*;
-use crate::handle::handle::{TaskHandle,CheckRc};
+use crate::handle::{TaskHandle,CheckRc};
 use crate::tasks::fields::Field;
 use serde::{Deserialize};
 use std::sync::Arc;

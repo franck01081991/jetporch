@@ -14,3 +14,35 @@ Links
 * [Contribution Guide](https://www.jetporch.com/community/contributing)
 
 Please route all questions, help requests, and feature discussion to Discord. Thanks!
+
+## Usage
+
+Run a playbook written in YAML with an inventory:
+
+```bash
+jetp ssh examples/playbooks/site.yml -i examples/inventory
+```
+
+`examples/playbooks/site.yml`:
+
+```yaml
+- name: say hello
+  groups:
+    - all
+  tasks:
+    - !shell
+      cmd: "echo hello from Jet"
+```
+
+## Development
+
+Before opening a pull request, ensure code passes the standard Rust checks:
+
+```bash
+cargo fmt
+cargo clippy -- -D warnings
+cargo test
+```
+
+> **Note**
+> Legacy modules currently rely on crate-level Clippy allowances so the linter can run in CI. See `docs/adr/0002-clippy-global-allow.md` for context and follow-up guidance.

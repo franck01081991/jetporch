@@ -26,7 +26,7 @@ use crate::tasks::fields::Field;
 use crate::tasks::FileAttributesEvaluated;
 use crate::connection::command::Forward;
 use crate::tasks::cmd_library::screen_general_input_loose;
-use crate::handle::handle::CheckRc;
+use crate::handle::CheckRc;
 use crate::handle::template::Safety;
 use crate::handle::response::Response;
 use crate::handle::template::Template;
@@ -70,18 +70,16 @@ impl Remote {
         }
     }
 
-    pub fn unwrap_string_result(&self, request: &Arc<TaskRequest>, str_result: &Result<String,String>) -> Result<String, Arc<TaskResponse>> {
-        return match str_result {
+    pub fn unwrap_string_result(&self, request: &Arc<TaskRequest>, str_result: &Result<String, String>) -> Result<String, Arc<TaskResponse>> {
+        match str_result {
             Ok(x) => Ok(x.clone()),
-            Err(y) => {
-                return Err(self.response.is_failed(request, &y.clone()));
-            }
-        };
+            Err(y) => Err(self.response.is_failed(request, y)),
+        }
     }
 
     // who is the remote user?
-    pub fn get_whoami(&self) -> Result<String,String> {
-        return self.connection.lock().unwrap().whoami();
+    pub fn get_whoami(&self) -> Result<String, String> {
+        self.connection.lock().unwrap().whoami()
     }
 
     // various files need to store things in tmp locations, mainly because SFTP does not support sudo or give the root
@@ -102,28 +100,28 @@ impl Remote {
         pb2.push(guid.as_str());
         let create_tmp_dir = format!("mkdir -p '{}'", pb.display());
         self.run_no_sudo(request, &create_tmp_dir, CheckRc::Checked)?;
-        return Ok((pb.clone(), pb2.clone()));
+        Ok((pb.clone(), pb2.clone()))
     }
 
     // wrappers around running CLI commands
 
-    pub fn run(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
-        return self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::Yes, Forward::No);
+    pub fn run(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>, Arc<TaskResponse>> {
+        self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::Yes, Forward::No)
     }
 
-    pub fn run_forwardable(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
-        return self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::Yes, Forward::Yes);
+    pub fn run_forwardable(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>, Arc<TaskResponse>> {
+        self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::Yes, Forward::Yes)
     }
 
-    pub fn run_no_sudo(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
-        return self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::No, Forward::No);
+    pub fn run_no_sudo(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>, Arc<TaskResponse>> {
+        self.internal_run(request, cmd, Safety::Safe, check_rc, UseSudo::No, Forward::No)
     }
 
     // the unsafe version of this doesn't check the shell string for possible shell variable injections, the most obvious and basic being ";"
     // usage of unsafe requires a special keyword in the 'shell' module for instance, or that no variables are present in the cmd parameter.
 
-    pub fn run_unsafe(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
-        return self.internal_run(request, cmd, Safety::Unsafe, check_rc, UseSudo::Yes, Forward::No);
+    pub fn run_unsafe(&self, request: &Arc<TaskRequest>, cmd: &String, check_rc: CheckRc) -> Result<Arc<TaskResponse>, Arc<TaskResponse>> {
+        self.internal_run(request, cmd, Safety::Unsafe, check_rc, UseSudo::Yes, Forward::No)
     }
 
     fn internal_run(&self, request: &Arc<TaskRequest>, cmd: &String, 
@@ -136,38 +134,36 @@ impl Remote {
                
         if safe == Safety::Safe {
             // check for invalid shell parameters
-            match screen_general_input_loose(&cmd) {
-                Ok(_x) => {},
-                Err(y) => return Err(self.response.is_failed(request, &y.clone()))
-            }
+            screen_general_input_loose(cmd).map_err(|err| self.response.is_failed(request, &err))?;
         }
 
         // use the sudo template to choose a new command to execute if specified.
         // this doesn't need to be sudo specifically, it's really a generic concept that can wrap a command with another tool
 
         let cmd_out = match use_sudo {
-            UseSudo::Yes => match self.template.add_sudo_details(request, &cmd) {
-                Ok(x) => x,
-                Err(y) => { return Err(self.response.is_failed(request, &format!("failure constructing sudo command: {}", y))); }
-            },
-            UseSudo::No => cmd.clone() 
+            UseSudo::Yes => self
+                .template
+                .add_sudo_details(request, cmd)
+                .map_err(|err| self.response.is_failed(request, &format!("failure constructing sudo command: {}", err)))?,
+            UseSudo::No => cmd.clone(),
         };
 
-        self.response.get_visitor().read().expect("read visitor").on_command_run(&self.response.get_context(), &Arc::clone(&self.host), &cmd);
+        self.response.get_visitor().read().expect("read visitor").on_command_run(&self.response.get_context(), &Arc::clone(&self.host), cmd);
 
         let result = self.connection.lock().unwrap().run_command(&self.response, request, &cmd_out, forward);
 
         // if requested, turn non-zero return codes into errors
 
-        if check_rc == CheckRc::Checked && result.is_ok() {
-            let ok_result = result.as_ref().unwrap();
-            let cmd_result = ok_result.command_result.as_ref().as_ref().unwrap();
-            if cmd_result.rc != 0 {
-                return Err(self.response.command_failed(request, &Arc::new(Some(cmd_result.clone()))));
+        if check_rc == CheckRc::Checked {
+            if let Ok(ok_result) = result.as_ref() {
+                let cmd_result = ok_result.command_result.as_ref().as_ref().unwrap();
+                if cmd_result.rc != 0 {
+                    return Err(self.response.command_failed(request, &Arc::new(Some(cmd_result.clone()))));
+                }
             }
         }
 
-        return result;
+        result
     }
 
     // the OS type of a host is set on connection by automatically running a discovery command
@@ -177,43 +173,44 @@ impl Remote {
         if os_type.is_none() {
             panic!("failed to detect OS type for {}, bailing out", self.host.read().unwrap().name);
         }
-        return os_type.unwrap();
+        os_type.unwrap()
     }
 
     // when we need to write a file we need to place it in a particular temp location and then move it
 
     pub fn get_transfer_location(&self, request: &Arc<TaskRequest>) -> Result<(Option<PathBuf>, Option<PathBuf>), Arc<TaskResponse>> {
-        let whoami = match self.get_whoami() {
-            Ok(x) => x,
-            Err(y) => { return Err(self.response.is_failed(request, &format!("cannot determine current user: {}", y))) }
-        };
-        let (p1,f1) = self.make_temp_path(&whoami, request)?;
-        return Ok((Some(p1.clone()), Some(f1.clone())))
+        let whoami = self
+            .get_whoami()
+            .map_err(|err| self.response.is_failed(request, &format!("cannot determine current user: {}", err)))?;
+        let (p1, f1) = self.make_temp_path(&whoami, request)?;
+        Ok((Some(p1), Some(f1)))
     }
 
     // supporting code for file transfer using temp files
 
-    fn get_effective_filename(&self, temp_dir: Option<PathBuf>, temp_path: Option<PathBuf>, path: &String) -> String {
-        let result = match temp_dir.is_some() {
-            true => {
-                let t = temp_path.as_ref().unwrap();
+    fn get_effective_filename(&self, temp_dir: Option<PathBuf>, temp_path: Option<PathBuf>, path: &str) -> String {
+        if temp_dir.is_some() {
+            if let Some(ref t) = temp_path {
                 t.clone().into_os_string().into_string().unwrap()
-            },
-            false =>  path.clone()
-        };
-        return result;
+            } else {
+                path.to_owned()
+            }
+        } else {
+            path.to_owned()
+        }
     }
 
     // more supporting code for file transfer using temp files
 
     fn conditionally_move_back(&self, request: &Arc<TaskRequest>, temp_dir: Option<PathBuf>, temp_path: Option<PathBuf>, desired_path: &String) -> Result<(), Arc<TaskResponse>> {
         if temp_dir.is_some() {
-            let move_to_correct_location = format!("mv '{}' '{}'", temp_path.as_ref().unwrap().display(), desired_path);
-            let delete_tmp_location = format!("rm '{}'", temp_path.as_ref().unwrap().display());
-            let result = self.run(request, &move_to_correct_location, CheckRc::Checked);
-            if result.is_err() {
-                let _ = self.run(request, &delete_tmp_location, CheckRc::Unchecked);
-                return Err(result.unwrap_err());
+            if let Some(ref temp_path_value) = temp_path {
+                let move_to_correct_location = format!("mv '{}' '{}'", temp_path_value.display(), desired_path);
+                let delete_tmp_location = format!("rm '{}'", temp_path_value.display());
+                if let Err(err) = self.run(request, &move_to_correct_location, CheckRc::Checked) {
+                    let _ = self.run(request, &delete_tmp_location, CheckRc::Unchecked);
+                    return Err(err);
+                }
             }
         }
         Ok(())
@@ -226,10 +223,10 @@ impl Remote {
         let (temp_dir, temp_path) = self.get_transfer_location(request)?;
         let real_path = self.get_effective_filename(temp_dir.clone(), temp_path.clone(), path); /* will be either temp_path or path */
         self.response.get_visitor().read().expect("read visitor").on_before_transfer(&self.response.get_context(), &Arc::clone(&self.host), &real_path);
-        let xfer_result = self.connection.lock().unwrap().write_data(&self.response, request, data, &real_path)?;
-        before_complete(&real_path.clone())?;
+        self.connection.lock().unwrap().write_data(&self.response, request, data, &real_path)?;
+        before_complete(&real_path)?;
         self.conditionally_move_back(request, temp_dir.clone(), temp_path.clone(), path)?;
-        return Ok(xfer_result);
+        Ok(())
     }
 
     // copies a file to a remote location
@@ -239,21 +236,21 @@ impl Remote {
         let (temp_dir, temp_path) = self.get_transfer_location(request)?;
         let real_path = self.get_effective_filename(temp_dir.clone(), temp_path.clone(), dest); /* will be either temp_path or path */
         self.response.get_visitor().read().expect("read visitor").on_before_transfer(&self.response.get_context(), &Arc::clone(&self.host), &real_path);
-        let xfer_result = self.connection.lock().unwrap().copy_file(&self.response, &request, src, &real_path)?;        
-        before_complete(&real_path.clone())?;
+        self.connection.lock().unwrap().copy_file(&self.response, request, src, &real_path)?;
+        before_complete(&real_path)?;
         self.conditionally_move_back(request, temp_dir.clone(), temp_path.clone(), dest)?;
-        return Ok(xfer_result);
+        Ok(())
     }
 
     // gets the octal string mode of a remote file
 
     pub fn get_mode(&self, request: &Arc<TaskRequest>, path: &String) -> Result<Option<String>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_mode_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
         
         let result = self.run(request, &cmd, CheckRc::Unchecked)?;
         let (rc, out) = cmd_info(&result);
-        return match rc {
+        match rc {
             // we can all unwrap because all possible string lists will have at least 1 element
             0 => Ok(Some(out.split_whitespace().nth(0).unwrap().to_string())),
             _ => Ok(None),
@@ -263,54 +260,56 @@ impl Remote {
     // is a remote path a file?
 
     pub fn get_is_file(&self, request: &Arc<TaskRequest>, path: &String) -> Result<bool,Arc<TaskResponse>> {
-        return match self.get_is_directory(request, path) {
+        match self.get_is_directory(request, path) {
             Ok(true) => Ok(false),
             Ok(false) => Ok(true),
-            Err(x) => Err(x)
-        };
+            Err(x) => Err(x),
+        }
     }
 
     // is a remote path a directory?
 
     pub fn get_is_directory(&self, request: &Arc<TaskRequest>, path: &String) -> Result<bool,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_is_directory_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+
         let result = self.run(request, &cmd, CheckRc::Checked)?;
         let (_rc, out) = cmd_info(&result);
         // so far this assumes reliable ls -ld output across all supported operating systems, this may change
         // in wich case we may need to consider os_type here
         if out.starts_with("d") {
-            return Ok(true);
+            Ok(true)
+        } else {
+            Ok(false)
         }
-        return Ok(false);
     }
 
     pub fn touch_file(&self, request: &Arc<TaskRequest>, path: &String) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_touch_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request, &cmd, CheckRc::Checked);  
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn create_directory(&self, request: &Arc<TaskRequest>, path: &String) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_create_directory_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request, &cmd, CheckRc::Checked);  
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn delete_file(&self, request: &Arc<TaskRequest>, path: &String) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_delete_file_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request, &cmd, CheckRc::Checked);  
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn delete_directory(&self, request: &Arc<TaskRequest>, path: &String, recurse: Recurse) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_delete_directory_command(self.get_os_type(), path, recurse);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
         if path.eq("/") {
-            return Err(self.response.is_failed(request, &String::from("accidental removal of / blocked by safeguard")));
+            Err(self.response.is_failed(request, "accidental removal of / blocked by safeguard"))
+        } else {
+            self.run(request, &cmd, CheckRc::Checked)
         }
-        return self.run(request, &cmd, CheckRc::Checked);  
     }
 
     // return the (owner,group) tuple for a remote file.  If the command fails this will instead return None
@@ -318,53 +317,47 @@ impl Remote {
 
     pub fn get_ownership(&self, request: &Arc<TaskRequest>, path: &String) -> Result<Option<(String,String)>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::get_ownership_command(self.get_os_type(), path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
         
         let result = self.run(request, &cmd, CheckRc::Unchecked)?;
         let (rc, out) = cmd_info(&result);
 
         match rc {
-            0 => {},
-            _ => { return Ok(None); },
+            0 => {
+                let mut split = out.split_whitespace();
+                let owner = split
+                    .nth(2)
+                    .ok_or_else(|| self.response.is_failed(request, &format!("unexpected output format from {}: {}", cmd, out)))?;
+                // this is a progressive iterator, hence 0 and not 3 for nth() below!
+                let group = split
+                    .nth(0)
+                    .ok_or_else(|| self.response.is_failed(request, &format!("unexpected output format from {}: {}", cmd, out)))?;
+                Ok(Some((owner.to_string(), group.to_string())))
+            }
+            _ => Ok(None),
         }
-
-        let mut split = out.split_whitespace();
-        let owner = match split.nth(2) {
-            Some(x) => x,
-            None => { 
-                return Err(self.response.is_failed(request, &format!("unexpected output format from {}: {}", cmd, out)));
-            }
-        };
-        // this is a progressive iterator, hence 0 and not 3 for nth() below!
-        let group = match split.nth(0) {
-            Some(x) => x,
-            None => { 
-                return Err(self.response.is_failed(request, &format!("unexpected output format from {}: {}", cmd, out))); 
-            }
-        };
-        return Ok(Some((owner.to_string(),group.to_string())));
     }
 
     pub fn set_owner(&self, request: &Arc<TaskRequest>, remote_path: &String, owner: &String, recurse: Recurse) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::set_owner_command(self.get_os_type(), remote_path, owner, recurse);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request,&cmd,CheckRc::Checked);
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn set_group(&self, request: &Arc<TaskRequest>, remote_path: &String, group: &String, recurse: Recurse) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::set_group_command(self.get_os_type(), remote_path, group, recurse);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request,&cmd,CheckRc::Checked);
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn set_mode(&self, request: &Arc<TaskRequest>, remote_path: &String, mode: &String, recurse: Recurse) -> Result<Arc<TaskResponse>,Arc<TaskResponse>> {
         let get_cmd_result = crate::tasks::cmd_library::set_mode_command(self.get_os_type(), remote_path, mode, recurse);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
-        return self.run(request,&cmd,CheckRc::Checked);
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
+        self.run(request, &cmd, CheckRc::Checked)
     }
 
     pub fn get_sha512(&self, request: &Arc<TaskRequest>, path: &String) -> Result<String,Arc<TaskResponse>> {
-        return self.internal_sha512(request, path);
+        self.internal_sha512(request, path)
     }
 
     // right now we assume there's a good way to run SHA-512 preinstalled on all platforms.
@@ -373,7 +366,7 @@ impl Remote {
         
         let os_type = self.get_os_type();
         let get_cmd_result = crate::tasks::cmd_library::get_sha512_command(os_type, path);
-        let cmd = self.unwrap_string_result(&request, &get_cmd_result)?;
+        let cmd = self.unwrap_string_result(request, &get_cmd_result)?;
 
         let result = self.run(request, &cmd, CheckRc::Unchecked)?;
 
@@ -382,16 +375,16 @@ impl Remote {
             // we can all unwrap because all possible string lists will have at least 1 element
             0 => {
                 let value = out.split_whitespace().nth(0).unwrap().to_string();
-                return Ok(value);
-            },
+                Ok(value)
+            }
             127 => {
                 // file not found
-                return Ok(String::from(""))
-            },
-            _ => {
-                return Err(self.response.is_failed(request, &format!("checksum failed: {}. {}", path, out)));
+                Ok(String::from(""))
             }
-        };
+            _ => {
+                Err(self.response.is_failed(request, &format!("checksum failed: {}. {}", path, out)))
+            }
+        }
     }
 
     // supporting code for any tasks that has an 'attributes' member, see 'template' for one example of usage
@@ -400,81 +393,84 @@ impl Remote {
     pub fn query_common_file_attributes(&self, request: &Arc<TaskRequest>, remote_path: &String, 
         attributes_in: &Option<FileAttributesEvaluated>, changes: &mut Vec<Field>, recurse: Recurse) -> Result<Option<String>,Arc<TaskResponse>> {
 
-        let remote_mode = self.get_mode(request, remote_path)?;
-        
-        if remote_mode.is_none() {
+        let remote_mode_option = self.get_mode(request, remote_path)?;
+
+        let remote_mode_value = if let Some(mode) = remote_mode_option.clone() {
+            mode
+        } else {
             changes.push(Field::Content);
             return Ok(None);
-        }
+        };
 
         if attributes_in.is_some() && recurse == Recurse::Yes {
             changes.push(Field::Owner);
             changes.push(Field::Group);
             changes.push(Field::Mode);
-            return Ok(remote_mode);
+            return Ok(Some(remote_mode_value));
         }
 
-        if attributes_in.is_some() {
-            let attributes = attributes_in.as_ref().unwrap();
+        if let Some(attributes) = attributes_in {
             let owner_result = self.get_ownership(request, remote_path)?;
-            if owner_result.is_none() {
-                return Err(self.response.is_failed(request, &String::from("file was deleted unexpectedly mid-operation")));
-            }
-            let (remote_owner, remote_group) = owner_result.unwrap();
+            let (remote_owner, remote_group) = owner_result
+                .ok_or_else(|| self.response.is_failed(request, "file was deleted unexpectedly mid-operation"))?;
 
-            if attributes.owner.is_some() && ! remote_owner.eq(attributes.owner.as_ref().unwrap()) { 
-                changes.push(Field::Owner); 
+            if let Some(owner) = attributes.owner.as_ref() {
+                if remote_owner != *owner {
+                    changes.push(Field::Owner);
+                }
             }
-            if attributes.group.is_some() && ! remote_group.eq(attributes.group.as_ref().unwrap())  { 
-                changes.push(Field::Group); 
+            if let Some(group) = attributes.group.as_ref() {
+                if remote_group != *group {
+                    changes.push(Field::Group);
+                }
             }
-            if attributes.mode.is_some() && ! remote_mode.as_ref().unwrap().eq(attributes.mode.as_ref().unwrap()) { 
-                changes.push(Field::Mode); 
+            if let Some(mode) = attributes.mode.as_ref() {
+                if remote_mode_value != *mode {
+                    changes.push(Field::Mode);
+                }
             }
         }
-        return Ok(remote_mode);
+        Ok(Some(remote_mode_value))
     }
 
     // supporting code for workign with files that have configurable attributes. See above + also
     // modules like template.
     // TODO: add SELinux
 
-    pub fn process_common_file_attributes(&self, 
-        request: &Arc<TaskRequest>, 
-        remote_path: &String, 
-        attributes_in: &Option<FileAttributesEvaluated>, 
-        changes: &Vec<Field>,
+    pub fn process_common_file_attributes(&self,
+        request: &Arc<TaskRequest>,
+        remote_path: &String,
+        attributes_in: &Option<FileAttributesEvaluated>,
+        changes: &[Field],
         recurse: Recurse)
 
             -> Result<(),Arc<TaskResponse>> {
 
-        if attributes_in.is_none() {
-            return Ok(());
-        }
-        let attributes = attributes_in.as_ref().unwrap();
-
-        for change in changes.iter() {
-            match change {
-                Field::Owner => {
-                    if attributes.owner.is_some() {
-                        self.set_owner(request, remote_path, &attributes.owner.as_ref().unwrap(), recurse)?;
+        if let Some(attributes) = attributes_in {
+            for change in changes.iter() {
+                match change {
+                    Field::Owner => {
+                        if let Some(owner) = attributes.owner.as_ref() {
+                            self.set_owner(request, remote_path, owner, recurse)?;
+                        }
                     }
-                },
-                Field::Group => {
-                    if attributes.group.is_some() {
-                        self.set_group(request, remote_path, &attributes.group.as_ref().unwrap(), recurse)?;
+                    Field::Group => {
+                        if let Some(group) = attributes.group.as_ref() {
+                            self.set_group(request, remote_path, group, recurse)?;
+                        }
                     }
-                },
-                Field::Mode => {
-                    if attributes.mode.is_some() {
-                        self.set_mode(request, remote_path, &attributes.mode.as_ref().unwrap(), recurse)?;
+                    Field::Mode => {
+                        if let Some(mode) = attributes.mode.as_ref() {
+                            self.set_mode(request, remote_path, mode, recurse)?;
+                        }
                     }
-                },
-                _ => {}
+                    _ => {}
+                }
             }
         }
-        return Ok(());
+        Ok(())
     }
+
 
     // see above comments about file attributes features.  
 
@@ -486,7 +482,7 @@ impl Remote {
              -> Result<(),Arc<TaskResponse>> {
 
         let all = Field::all_file_attributes();
-        return self.process_common_file_attributes(request, remote_path, attributes_in, &all, recurse);
+        self.process_common_file_attributes(request, remote_path, attributes_in, &all, recurse)
     }
 
 

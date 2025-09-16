@@ -90,10 +90,10 @@ impl Template {
     }
 
     fn template_unsafe_internal(&self, request: &Arc<TaskRequest>, tm: TemplateMode, _field: &str, template: &str, blend_target: BlendTarget) -> Result<String,Arc<TaskResponse>> {
-        let result = self.run_state.context.read().unwrap().render_template(&template.to_string(), &self.host, blend_target, tm);
+        let result = self.run_state.context.read().unwrap().render_template(template, &self.host, blend_target, tm);
         if let Ok(result_ok) = result.as_ref() {
             if result_ok.is_empty() {
-                return Err(self.response.is_failed(request, &"evaluated to empty string".to_string()));
+                return Err(self.response.is_failed(request, "evaluated to empty string"));
             }
         }
         let result2 = self.unwrap_string_result(request, &result)?;
@@ -199,7 +199,7 @@ impl Template {
 
     pub fn path(&self, request: &Arc<TaskRequest>, tm: TemplateMode, field: &str, template: &str) -> Result<String,Arc<TaskResponse>> {
         // templates a string and makes sure the output looks like a valid path
-        let result = self.run_state.context.read().unwrap().render_template(&template.to_string(), &self.host, BlendTarget::NotTemplateModule, tm);
+        let result = self.run_state.context.read().unwrap().render_template(template, &self.host, BlendTarget::NotTemplateModule, tm);
         let result2 = self.unwrap_string_result(request, &result)?;
         match screen_path(&result2) {
             Ok(x) => Ok(x),
@@ -341,7 +341,7 @@ impl Template {
         if tm == TemplateMode::Off {
             return Ok(false);
         }
-        let result = self.get_context().read().unwrap().test_condition(&expr.to_string(), &self.host, tm);
+        let result = self.get_context().read().unwrap().test_condition(expr, &self.host, tm);
         match result {
             Ok(x) => Ok(x),
             Err(y) => Err(self.response.is_failed(request, &y)),
@@ -353,7 +353,7 @@ impl Template {
         if tm == TemplateMode::Off {
             return Ok(false);
         }
-        let result = self.get_context().read().unwrap().test_condition_with_extra_data(&expr.to_string(), &self.host, vars_input, tm);
+        let result = self.get_context().read().unwrap().test_condition_with_extra_data(expr, &self.host, vars_input, tm);
         match result {
             Ok(x) => Ok(x),
             Err(y) => Err(self.response.is_failed(request, &y)),

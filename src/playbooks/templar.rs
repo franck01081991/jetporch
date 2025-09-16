@@ -56,25 +56,21 @@ impl Templar {
 
     // evaluate a string
 
-    pub fn render(&self, template: &String, data: serde_yaml::Mapping, template_mode: TemplateMode) -> Result<String, String> {
-        let result : Result<String, RenderError> = match template_mode {
+    pub fn render(&self, template: &str, data: serde_yaml::Mapping, template_mode: TemplateMode) -> Result<String, String> {
+        let result: Result<String, RenderError> = match template_mode {
             TemplateMode::Strict => HANDLEBARS.render_template(template, &data),
             /* this is only used to get back the raw 'items' collection inside the task FSM */
-            TemplateMode::Off => Ok(String::from("empty"))
+            TemplateMode::Off => Ok(String::from("empty")),
         };
-        return match result {
-            Ok(x) => {
-                Ok(x)
-            },
-            Err(y) => {
-                Err(format!("Template error: {}", y.desc))
-            }
+        match result {
+            Ok(x) => Ok(x),
+            Err(y) => Err(format!("Template error: {}", y.desc)),
         }
     }
-    
+
     // used for with/cond and also in the shell module
 
-    pub fn test_condition(&self, expr: &String, data: serde_yaml::Mapping, template_mode: TemplateMode) -> Result<bool, String> {
+    pub fn test_condition(&self, expr: &str, data: serde_yaml::Mapping, template_mode: TemplateMode) -> Result<bool, String> {
         if template_mode == TemplateMode::Off {
             /* this is only used to get back the raw 'items' collection inside the task FSM */
             return Ok(true);
@@ -83,14 +79,14 @@ impl Templar {
         let template = format!("{{{{#if {expr} }}}}true{{{{ else }}}}false{{{{/if}}}}");
         let result = self.render(&template, data, TemplateMode::Strict);
         match result {
-            Ok(x) => { 
+            Ok(x) => {
                 if x.as_str().eq("true") {
                     return Ok(true);
                 } else {
                     return Ok(false);
                 }
             },
-            Err(y) => { 
+            Err(y) => {
                 if y.find("Couldn't read parameter").is_some() {
                     return Err(format!("failed to parse conditional: {}: one or more parameters may be undefined", expr))
                 }

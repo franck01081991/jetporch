@@ -43,3 +43,6 @@ cargo fmt
 cargo clippy -- -D warnings
 cargo test
 ```
+
+> **Note**
+> Legacy modules currently rely on crate-level Clippy allowances so the linter can run in CI. See `docs/adr/0002-clippy-global-allow.md` for context and follow-up guidance.

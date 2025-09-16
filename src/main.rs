@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 // Jetporch
 // Copyright (C) 2023 - Michael DeHaan <michael@michaeldehaan.net> + contributors
 //

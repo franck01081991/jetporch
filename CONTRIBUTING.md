@@ -1,1 +1,1 @@
-See https://www.jetporch.com/community/contributing
+Consultez https://www.jetporch.com/community/contributing

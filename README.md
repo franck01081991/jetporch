@@ -1,32 +1,32 @@
-# Jetporch - the Jet Enterprise Professional Orchestrator
+# Jetporch - l'orchestrateur professionnel Jet Enterprise
 
-Jetporch (aka Jet) is a general-purpose, community-driven IT automation platform for configuration management, 
-deployment, orchestration, patching, and arbitrary task execution workflows. 
+Jetporch (alias Jet) est une plateforme d'automatisation informatique polyvalente et portée par la communauté pour la gestion de configuration,
+le déploiement, l'orchestration, la mise à jour et l'exécution de tâches arbitraires.
 
-Jet is a GPLv3 licensed project, created and run by [Michael DeHaan](https://home.laserllama.net). [(<michael@michaeldehaan.net>)](mailto:michael@michaeldehaan.net).
+Jet est un projet sous licence GPLv3, créé et animé par [Michael DeHaan](https://home.laserllama.net) ([<michael@michaeldehaan.net>](mailto:michael@michaeldehaan.net)).
 
-Links
+Liens
 
-* [All Documentation](https://www.jetporch.com/)
+* [Toute la documentation](https://www.jetporch.com/)
 * [Installation](https://www.jetporch.com/basics/installing-from-source)
-* [Blog and Announcements](https://jetporch.substack.com/)
-* [Discord Chat](https://www.jetporch.com/community/discord-chat)
-* [Contribution Guide](https://www.jetporch.com/community/contributing)
+* [Blog et annonces](https://jetporch.substack.com/)
+* [Discussion Discord](https://www.jetporch.com/community/discord-chat)
+* [Guide de contribution](https://www.jetporch.com/community/contributing)
 
-Please route all questions, help requests, and feature discussion to Discord. Thanks!
+Merci de rediriger toutes les questions, demandes d'aide et discussions fonctionnelles vers Discord.
 
-## Usage
+## Utilisation
 
-Run a playbook written in YAML with an inventory:
+Exécuter un playbook écrit en YAML avec un inventaire :
 
 ```bash
 jetp ssh examples/playbooks/site.yml -i examples/inventory
 ```
 
-`examples/playbooks/site.yml`:
+`examples/playbooks/site.yml` :
 
 ```yaml
-- name: say hello
+- name: dire bonjour
   groups:
     - all
   tasks:
@@ -34,9 +34,9 @@ jetp ssh examples/playbooks/site.yml -i examples/inventory
       cmd: "echo hello from Jet"
 ```
 
-## Development
+## Développement
 
-Before opening a pull request, ensure code passes the standard Rust checks:
+Avant d'ouvrir une pull request, assurez-vous que le code passe les vérifications Rust standards :
 
 ```bash
 cargo fmt
@@ -44,5 +44,5 @@ cargo clippy -- -D warnings
 cargo test
 ```
 
-> **Note**
-> Legacy modules currently rely on crate-level Clippy allowances so the linter can run in CI. See `docs/adr/0002-clippy-global-allow.md` for context and follow-up guidance.
+> **Remarque**
+> Les modules hérités s'appuient actuellement sur des autorisations Clippy au niveau de la crate afin de pouvoir exécuter le linter en CI. Consultez `docs/adr/0002-clippy-global-allow.md` pour le contexte et les actions de suivi.

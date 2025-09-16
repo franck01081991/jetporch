@@ -1,45 +1,46 @@
-Inventory scripts for Jetporch
-==============================
+Scripts d'inventaire pour Jetporch
+==================================
 
 https://www.jetporch.com/inventory/dynamic-cloud-inventory
 
-About This Repo
-===============
+À propos de ce dépôt
+====================
 
-Jet uses an inventory script format originally developed for Ansible in 2012, that was in turn inspired by an earlier feature from Puppet
-called 'external nodes'.
+Jet utilise un format de script d'inventaire initialement développé pour Ansible en 2012, lui-même inspiré d'une fonctionnalité antérieure de Puppet
+appelée « external nodes ».
 
-This directory was started was started with a friendly fork of the ansible inventory scripts. These scripts were removed from the ansible inventory tree after Ansible 2.9
-as Ansible moved to a new system of inventory plugins which were not easy to call from other tooling, thus warranting this fork.
+Ce répertoire a démarré comme un fork amical des scripts d'inventaire Ansible. Ces scripts ont été retirés de l'arbre Ansible après la version 2.9
+lorsqu'Ansible est passé à un nouveau système de plugins d'inventaire difficiles à appeler depuis d'autres outils, d'où ce fork.
 
-With this fork, Jet can support the original inventory script format despite a differences in programming language (Jet is written in Rust). 
-We suspect other projects can also make use of this JSON data as is documented on the jetporch homepage, and would encourage this!
+Grâce à ce fork, Jet peut prendre en charge le format original de script d'inventaire malgré les différences de langage de programmation (Jet est écrit
+en Rust).
+Nous pensons que d'autres projets peuvent aussi exploiter ces données JSON comme indiqué sur la page d'accueil de Jetporch, et nous les y encourageons !
 
-What Is Included
-================
+Contenu
+=======
 
-Take a look at the inventory/ directory for all of the plugins offered.  
+Consultez le répertoire inventory/ pour découvrir tous les plugins proposés.
 
-Most plugins can work by copying the inventory plugin out of the repo
-along with the associated configuration file. Many plugins also respond to environment variables. Details are almost always mentioned
-in the source code.
+La plupart des plugins fonctionnent en copiant le plugin d'inventaire depuis le dépôt
+avec le fichier de configuration associé. De nombreux plugins répondent également à des variables d'environnement. Les détails sont quasiment toujours mentionnés
+dans le code source.
 
-Customizing an inventory script to your own needs is always encouraged if you are so inclined, which is why the included scripts are not part of any 
-tightly integrated software package.
+Adapter un script d'inventaire à vos besoins est vivement encouragé si vous en avez envie, ce qui explique pourquoi les scripts fournis ne font pas partie d'un
+ensemble logiciel étroitement intégré.
 
-Status
+Statut
 ======
 
-As the originating code was a handful of years old when we established Jeti (September 2023), a few plugins may need and warrant changes to function, 
-or may be in need of additions to surface newer features from some of the services.  Updates via patches are very welcome and patches will be tended to quickly!
+Comme le code d'origine avait plusieurs années lorsque nous avons créé Jeti (septembre 2023), certains plugins peuvent nécessiter des modifications pour fonctionner
+ou pour exposer de nouvelles fonctionnalités de certains services. Les mises à jour via des correctifs sont très bienvenues et traitées rapidement !
 
-We want everything here to function at a high degree of quality, and if things are unsalveagable due to major
-API changes, please let us know and these scripts can be retired.
+Nous souhaitons que tout le contenu fonctionne avec un niveau de qualité élevé, et si certains scripts sont irrécupérables à cause de changements
+majeurs d'API, merci de nous prévenir afin qu'ils puissent être retirés.
 
-Tested
+Testés
 ======
 
-We maintain a list of validated plugins tested so far:
+Nous tenons à jour une liste des plugins validés jusqu'ici :
 
 * Azure
 * AWS/EC2
@@ -48,80 +49,72 @@ We maintain a list of validated plugins tested so far:
 * GCE
 * OpenStack
 
-Nearly all plugins should return JSON, they may have just not been tested
-yet with full cloud configurations. Help validating these is welcome.
+Presque tous les plugins devraient renvoyer du JSON, ils n'ont peut-être simplement pas encore été testés
+avec des configurations cloud complètes. Toute aide à la validation est la bienvenue.
 
-If you validate that a plugin is working (or has some limitations), let us know with a patch or even just a GitHub ticket.  Plugins that get no users
-or tickets after a full year may be deleted.
+Si vous confirmez qu'un plugin fonctionne (ou présente des limitations), signalez-le par un correctif ou même un ticket GitHub. Les plugins sans utilisateur
+ni ticket pendant un an complet pourront être supprimés.
 
-Support and Development Guidelines
-==================================
+Lignes directrices pour le support et le développement
+======================================================
 
-None of these plugins should be considered unsupported but they should be considered 'community maintained' as not all services therein
-or features in those services are ones that the project leadership uses regularly.
+Aucun plugin ne doit être considéré comme non pris en charge, mais ils sont « maintenus par la communauté », car tous les services ou fonctionnalités concernés ne
+sont pas utilisés régulièrement par l'équipe projet.
 
-Obviously we want inventories for systems such as AWS/EC2, GCE, etc, to function at a particularly high degree of quality.
+Nous souhaitons évidemment que les inventaires pour des systèmes comme AWS/EC2, GCE, etc., soient d'une qualité particulièrement élevée.
 
-Please be respectful and do not contact listed authors of older code
-for help with forked jeti inventory scripts, names are left around for attribution and copyright reasons, not for support.
+Merci de rester respectueux et de ne pas contacter les auteurs mentionnés du code historique
+pour obtenir de l'aide sur les scripts d'inventaire Jeti forkés ; les noms sont conservés pour des raisons d'attribution et de copyright, pas pour le support.
 
-Where the plugin imports some code from "jeti.module_utils" in most cases the plugin can be edited to not need these, as much of this
-is related to legacy python 2.X support, and we do not mind requiring python3.  Patches to remove imports to jeti.module_utils
-(with sufficient testing of the module) will always be accepted! Once all imports from jeti are removed, we can delete
-the 'lib/' directory from this repo.
+Quand un plugin importe du code depuis "jeti.module_utils", il est généralement possible de modifier le plugin pour ne plus en dépendre, car une grande partie de ce
+code concerne la compatibilité historique avec Python 2.X. Nous n'avons aucun problème à exiger Python 3. Les correctifs supprimant les imports de jeti.module_utils
+(accompagnés de tests suffisants du module) seront toujours acceptés ! Une fois tous les imports depuis jeti supprimés, nous pourrons effacer
+définitivement le répertoire 'lib/' de ce dépôt.
 
-If you would like to port features over from inventory scripts that were made since Ansible 2.9, that is welcome, but make sure
-any ports are well tested and have no dependencies on Ansible (or jeti's legacy module_utils directory that we are seeking to remove).
-In other words, scripts should be entirely self contained other than external dependencies they have from pypi or possibly cargo for
-future Rust dynamic inventory programs.
+Si vous souhaitez porter des fonctionnalités issues de scripts d'inventaire développés depuis Ansible 2.9, c'est possible, mais assurez-vous
+que ces ports sont bien testés et n'ont aucune dépendance à Ansible (ou au répertoire legacy module_utils de Jeti que nous cherchons à retirer).
+En d'autres termes, les scripts doivent être entièrement autonomes, hormis leurs dépendances externes issues de PyPI ou éventuellement de Cargo
+pour de futurs programmes d'inventaire dynamiques en Rust.
 
-Note that because Jetporch supports a more liberal interpretation of the historical Ansible module format than Michael developed
-in 2012, scripts in this repo (especially new ones) may diverge and not be loadable by classic Ansible. 
-We are fine with this and that is not a development concern. This should make modules easier to develop for more new scripts.
+Notez que Jetporch accepte une interprétation plus souple de l'ancien format de module Ansible que Michael avait défini en 2012. Les scripts de ce dépôt (notamment les plus récents) peuvent donc diverger et ne pas être chargeables par Ansible classique.
+Cela ne nous pose aucun problème et ne constitue pas une contrainte de développement. Cette souplesse facilite le développement de nouveaux scripts.
 
-See https://www.jetporch.com/inventory/dynamic-cloud-inventory for the JSON specification.
+Voir https://www.jetporch.com/inventory/dynamic-cloud-inventory pour la spécification JSON.
 
-New inventory scripts do not need to accept '--host', as this is never used as Jet does not pass arguments to the inventory script.  Patches
- to remove this feature from any inventory scripts will also be accepted.
+Les nouveaux scripts d'inventaire n'ont pas besoin d'accepter « --host », car cet argument n'est jamais utilisé et Jet ne passe pas d'arguments aux scripts d'inventaire.
+Les correctifs supprimant cette fonctionnalité de scripts existants seront également acceptés.
 
-While jet is efficient with large datasets, any inventory plugins also return a serious number of variables that may not be deemed usuable for automation purposes, for instance,
-if every single host object comes back with the list of possible instance sizes for a region, patches to remove this content are
-GREAT candidates. Ideally only theoretically relevant data should be returned in the JSON.
+Même si Jet gère efficacement les grands jeux de données, certains plugins d'inventaire renvoient aussi un grand nombre de variables pouvant s'avérer inutiles pour l'automatisation.
+Par exemple, si chaque hôte renvoie la liste complète des tailles d'instance possibles pour une région, les correctifs supprimant ces informations sont d'excellentes candidates. Idéalement, seul le contenu pertinent doit apparaître dans le JSON.
 
-Testing A Script
+Tester un script
 ================
 
-Follow the instructions on any inventory plugin to see if it works with your infrastructure:
+Suivez les instructions de chaque plugin d'inventaire pour vérifier qu'il fonctionne avec votre infrastructure :
 
-1) Chmod +x the plugin, then execute it manually with "./plugin.py" or "python3 ./plugin.py"
+1. Rendez le plugin exécutable avec « chmod +x plugin.py », puis lancez-le manuellement via « ./plugin.py » ou « python3 ./plugin.py ».
+2. Vous devrez peut-être installer des dépendances, par exemple « pip3 install requests » si nécessaire. Si le plugin ne mentionne pas
+   les commandes pip à exécuter en tête de fichier, les correctifs pour les ajouter seront bienvenus ! Chaque plugin peut
+   également disposer de son propre fichier README ".md" nommé d'après le plugin d'inventaire.
+3. Vous devrez peut-être configurer le fichier de configuration du module. Dans ce cas, copiez le fichier de configuration et le script
+   dans un autre répertoire et modifiez le fichier de configuration sur place. Assurez-vous que ces modifications n'apparaissent pas
+   dans vos correctifs envoyés au dépôt, afin de ne pas divulguer de clé API !
+4. Exécutez ensuite le script d'inventaire avec jetp : « jetp show --inventory ./plugin.py --groups all » pour voir comment Jet charge le plugin.
+   Vous pouvez désormais examiner le même JSON que Jet reçoit !
+5. Vous pouvez maintenant utiliser le plugin d'inventaire avec « jetp ssh --inventory ./plugin.py --playbook playbook.yml » !
 
-2) You may need to install some dependencies, for instance "pip3 install requests" if this fails.  If the plugin does not mention
-pip install commands the user needs to run at the top of the file, patches to add them will be welcome! Each plugin can
-also have it's own ".md" readme named after the inventory plugin if it wants.
-
-3) You may need to have the configuration file for the module configured.  If so, copy the configure file and the script
-out to another directory and edit the configuration file there.  Make sure the changes to configuration files do not
-appear in any patches requests back the repo, such as to leak an API key!
-
-4) Now execute the inventory script with jetp: "jetp show --inventory ./plugin.py --groups all" to see how Jet loaded the plugin.
-You can now see the same JSON as Jet experiences it!
-
-5) You can now use the inventory plugin with "jetp ssh --inventory ./plugin.py --playbook playbook.yml"!
-
-Authors
+Auteurs
 =======
 
-Ansible was created by [Michael DeHaan](https://github.com/mpdehaan)
-and has contributions from over thousands of users. We are thankful for every one
-of their contributions here. [Ansible](https://www.ansible.com) is maintained by and
-is a trademark of [Red Hat, Inc](https://www.redhat.com>)
+Ansible a été créé par [Michael DeHaan](https://github.com/mpdehaan)
+et bénéficie de contributions de milliers d'utilisateurs. Nous leur sommes reconnaissants pour chacune
+de leurs contributions ici. [Ansible](https://www.ansible.com) est maintenu par et
+où est une marque déposée de [Red Hat, Inc](https://www.redhat.com>).
 
-Contributions to this repo from September 2023 and beyond are made by
-contributors of Jeti, a subproject of [Jetporch](https://www.jetporch.com)
+Les contributions à ce dépôt depuis septembre 2023 sont réalisées par
+les contributeurs de Jeti, un sous-projet de [Jetporch](https://www.jetporch.com).
 
-License
+Licence
 =======
 
-GNU General Public License v3.0 or later, see COPYING for details.
-
-
+GNU General Public License v3.0 ou ultérieure, voir COPYING pour plus de détails.

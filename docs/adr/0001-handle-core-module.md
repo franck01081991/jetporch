@@ -1,15 +1,15 @@
-# ADR 0001: Rename `handle::handle` Module to `handle::core`
+# ADR 0001 : renommer le module `handle::handle` en `handle::core`
 
-## Status
-Accepted
+## Statut
+Accepté
 
-## Context
-The Rust module `handle::handle` duplicated the name of its parent module, causing Clippy's `module_inception` lint to fail the build. The module exposes the task execution handle shared across modules, so the rename must preserve the public API for downstream code.
+## Contexte
+Le module Rust `handle::handle` dupliquait le nom de son module parent, ce qui faisait échouer la construction à cause de l'alerte Clippy `module_inception`. Le module expose le handle d'exécution des tâches partagé entre les modules, le renommage doit donc préserver l'API publique pour le code en aval.
 
-## Decision
-Rename the module file to `src/handle/core.rs`, expose it as `handle::core`, and re-export `TaskHandle` and `CheckRc` at the `handle` namespace root. This resolves the lint while keeping existing consumers working through the re-exported types.
+## Décision
+Renommer le fichier de module en `src/handle/core.rs`, l'exposer sous le nom `handle::core`, et ré-exporter `TaskHandle` et `CheckRc` à la racine de l'espace de noms `handle`. Cette approche corrige l'alerte tout en maintenant le fonctionnement des consommateurs existants via les types ré-exportés.
 
-## Consequences
-* Clippy no longer flags `module_inception` for the handle subsystem.
-* Downstream modules now import `crate::handle::{TaskHandle, CheckRc}` instead of the duplicated path.
-* Future additions should prefer unique module names to avoid similar lints.
+## Conséquences
+* Clippy ne signale plus `module_inception` pour le sous-système de handle.
+* Les modules en aval importent désormais `crate::handle::{TaskHandle, CheckRc}` au lieu du chemin dupliqué.
+* Les ajouts futurs doivent privilégier des noms de module uniques pour éviter des alertes similaires.

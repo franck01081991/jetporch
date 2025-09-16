@@ -16,7 +16,7 @@
 
 use crate::registry::list::Task;
 use crate::connection::connection::Connection;
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use crate::playbooks::traversal::RunState;
 use crate::inventory::hosts::Host;
 use crate::playbooks::traversal::HandlerMode;

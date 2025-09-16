@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // long with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use crate::tasks::request::TaskRequest;
 use crate::tasks::response::TaskResponse;
 use crate::tasks::TemplateMode;
@@ -49,13 +49,10 @@ pub enum Recurse {
 impl FileAttributesInput {
 
     // given an octal string, like 0o755 or 755, return the numeric value
-    pub fn is_octal_string(mode: &String) -> bool {
-        let octal_no_prefix = str::replace(&mode, "0o", "");
+    pub fn is_octal_string(mode: &str) -> bool {
+        let octal_no_prefix = str::replace(mode, "0o", "");
         // this error should be screened out by template() below already but return types are important.
-        return match i32::from_str_radix(&octal_no_prefix, 8) {
-            Ok(_x) => true,
-            Err(_y) => false 
-        }
+        matches!(i32::from_str_radix(&octal_no_prefix, 8), Ok(_))
     }
 
     // given an octal string, like 0o755 or 755, return the numeric value

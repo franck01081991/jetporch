@@ -71,12 +71,17 @@ impl Response {
 
     pub fn command_failed(&self, _request: &Arc<TaskRequest>, result: &Arc<Option<CommandResult>>) -> Arc<TaskResponse> {
         // used internally by run functions in remote.rs when commands fail, suitable for use as a final module response
-        self.get_visitor().read().expect("read visitor").on_command_failed(&self.get_context(), &Arc::clone(&self.host), &Arc::clone(result));
+        let context = self.get_context();
+        let visitor = self.get_visitor();
+        visitor
+            .read()
+            .expect("read visitor")
+            .on_command_failed(&context, &self.host, result);
         Arc::new(TaskResponse {
             status: TaskStatus::Failed,
             changes: Vec::new(),
             msg: Some(String::from("command failed")),
-            command_result: Arc::clone(&result),
+            command_result: Arc::clone(result),
             with: Arc::new(None),
             and: Arc::new(None),
         })
@@ -84,12 +89,17 @@ impl Response {
 
     pub fn command_ok(&self, _request: &Arc<TaskRequest>, result: &Arc<Option<CommandResult>>) -> Arc<TaskResponse> {
         // used internally by run functions in remote.rs when commands succeed, suitable for use as a final module response
-        self.get_visitor().read().expect("read visitor").on_command_ok(&self.get_context(), &Arc::clone(&self.host), &Arc::clone(result));
+        let context = self.get_context();
+        let visitor = self.get_visitor();
+        visitor
+            .read()
+            .expect("read visitor")
+            .on_command_ok(&context, &self.host, result);
         Arc::new(TaskResponse {
             status: TaskStatus::IsExecuted,
             changes: Vec::new(),
             msg: None,
-            command_result: Arc::clone(&result),
+            command_result: Arc::clone(result),
             with: Arc::new(None),
             and: Arc::new(None),
         })

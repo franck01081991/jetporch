@@ -33,3 +33,13 @@ jetp ssh examples/playbooks/site.yml -i examples/inventory
     - !shell
       cmd: "echo hello from Jet"
 ```
+
+## Development
+
+Before opening a pull request, ensure code passes the standard Rust checks:
+
+```bash
+cargo fmt
+cargo clippy -- -D warnings
+cargo test
+```

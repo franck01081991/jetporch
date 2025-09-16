@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // long with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::handle::handle::TaskHandle;
+use crate::handle::TaskHandle;
 use crate::tasks::request::TaskRequest;
 use crate::tasks::response::TaskResponse;
 use crate::tasks::logic::{PreLogicInput,PreLogicEvaluated,PostLogicEvaluated};

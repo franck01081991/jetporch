@@ -393,7 +393,7 @@ impl Template {
         if tm == TemplateMode::Off {
             return Ok(PathBuf::new());
         }
-        let prelim = match screen_path(&str_path.to_string()) {
+        let prelim = match screen_path(str_path) {
             Ok(x) => x,
             Err(y) => Err(self.response.is_failed(request, &format!("{}, for field: {}", y, field)))?,
         };
